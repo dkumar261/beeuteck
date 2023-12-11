@@ -1,0 +1,98 @@
+select null as resource_id ,
+'Unnamed' as resource_name,
+null as date_of_join,
+null as last_working_date,
+prm.role_id as role_id,
+(select string_agg(r.role,',') from dbo.role_master as r where exists (select value from string_split(prm.role_id, ',') as id where r.role_id = try_cast(id.value AS int))) as role,
+prm.skill_id as skill_id,
+(select string_agg(r.skill,',') from dbo.skill_master as r where exists (select value from string_split(prm.skill_id, ',') as id where r.skill_id = try_cast(id.value AS int))) as skills,
+prm.location_id as emp_location_id,
+(select string_agg(r.location,',') from dbo.location_master as r where exists (select value from string_split(prm.location_id, ',') as id where r.location_id = try_cast(id.value AS int))) as location,
+prm.emp_type_id as employment_type_id,
+(select string_agg(r.employment_type,',') from dbo.employment_type_lkup as r where exists (select value from string_split(prm.emp_type_id, ',') as id where r.emp_type_id = try_cast(id.value AS int))) as employment_type,
+prm.emp_location_id as employee_location,
+rqr.request_status as request_status,
+prm.map_id,
+prm.project_id as project_id,
+cast(pm.project_start_date as date) as start_date,
+cast(pm.project_end_date as date) as end_date,
+prm.allocation_start_dt as allocation_start_date,
+prm.allocation_end_dt as allocation_end_date,
+prm.description,
+sum(coalesce(prme.fte,0.00)) as sum_fte,
+min(coalesce(prme.fte,0.00)) as min_fte,
+max(coalesce(prme.fte,0.00)) as max_fte,
+prm.created_by as created_by,
+prm.created_date as created_date,
+prm.modified_by as modified_by,
+prm.modified_date as modified_date
+
+from dbo.project_resource_mapping as prm
+
+left join dbo.requested_resource as rqr on rqr.request_id = prm.request_id
+
+join(
+	select
+	pm.project_id,
+	(
+		case
+			when
+				pd.actual_start_date is not null and pd.actual_start_date!='null' and pd.actual_start_date!=''
+			then
+				case when pfv1.field_value < pd.actual_start_date then pfv1.field_value else  pd.actual_start_date end
+			else
+				pfv1.field_value
+		end
+	) as project_start_date,
+	(
+		case
+			when
+				pd.actual_end_date is not null and pd.actual_end_date!='null' and pd.actual_end_date!=''
+			then
+				case when pfv2.field_value > pd.actual_end_date then pfv2.field_value else pd.actual_end_date end
+			else
+				pfv2.field_value
+		end
+	) as project_end_date
+	from dbo.project_master as pm
+
+	join dbo.project_mgmt_field_value as pfv1 on pfv1.project_id = pm.project_id
+	join dbo.project_mgmt_field_map as pfm1 on pfv1.field_id = pfm1.field_id
+
+	join dbo.project_mgmt_field_value as pfv2 on pfv2.project_id = pm.project_id
+	join dbo.project_mgmt_field_map as pfm2 on pfv2.field_id = pfm2.field_id
+
+	left join (
+
+		select pm.project_id, pfv3.field_value as actual_start_date, pfv4.field_value as actual_end_date
+
+		from dbo.project_master as pm
+		left join dbo.project_mgmt_field_value as pfv3 on pfv3.project_id = pm.project_id
+		left join dbo.project_mgmt_field_map as pfm3 on pfv3.field_id = pfm3.field_id
+
+		left join dbo.project_mgmt_field_value as pfv4 on pfv4.project_id = pm.project_id
+		left join dbo.project_mgmt_field_map as pfm4 on pfv4.field_id = pfm4.field_id
+
+		where pfm3.fields = 'Actual Start Date' and pfm4.fields = 'Actual End Date'
+	) as pd on pm.project_id = pd.project_id
+
+	where pfm1.fields = 'Start Date' and pfm2.fields = 'End Date'
+) as pm on prm.project_id = pm.project_id
+
+left join dbo.project_resource_mapping_extended as prme on prme.map_id = prm.map_id
+
+where prm.is_deleted = '0' and prm.project_id = :projectId and resource_id is null
+group by
+prm.emp_location_id, rqr.request_status, prm.map_id,
+prm.skill_id, prm.location_id, prm.emp_type_id, prm.role_id,
+cast(pm.project_start_date as date),
+cast(pm.project_end_date as date),
+prm.allocation_start_dt,
+prm.allocation_end_dt,
+prm.project_id, prm.allocation_start_dt, prm.allocation_end_dt, prm.description, prme.fte,
+prm.created_by,
+prm.created_date ,
+prm.modified_by ,
+prm.modified_date
+
+--order by rm.resource_id;

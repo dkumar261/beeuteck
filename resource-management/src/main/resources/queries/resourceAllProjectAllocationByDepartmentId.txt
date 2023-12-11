@@ -1,0 +1,85 @@
+select rm.resource_id, concat(rm.first_name,' ',rm.last_name) as resource_name,
+rm.date_of_join as date_of_join, rm.last_working_date as last_working_date,
+(
+	select string_agg(r.role,',') from dbo.resource_mgmt_field_value as rv
+	inner join dbo.resource_mgmt_field_map as rf on rv.field_id = rf.field_id
+	inner join dbo.role_master as r on cast(r.role_id as varchar) in (select value from string_split(rv.field_value,','))
+	where rv.resource_id = rm.resource_id and rf.fields = 'Role'
+) as role,
+rv1.field_value as emp_location,
+et.employment_type as employment_type,
+prm.map_id,
+prm.project_id,
+prm.project_name,
+prm.start_date,
+prm.end_date,
+prm.allocation_start_date,
+prm.allocation_end_date,
+coalesce(prm.fte, 0.00) as fte_requested,
+coalesce(prm.sum_fte,0.00) as sum_fte,
+coalesce(prm.min_fte,0.00) as min_fte,
+coalesce(prm.max_fte,0.00) as max_fte,
+prm.created_by,
+prm.created_date,
+prm.modified_by,
+prm.modified_date
+
+from dbo.resource_master as rm
+
+inner join dbo.resource_mgmt_field_value as rv1 on rv1.resource_id = rm.resource_id
+inner join dbo.resource_mgmt_field_map as rf1 on rf1.field_id = rv1.field_id and rf1.fields='Employee Location'
+
+inner join dbo.resource_mgmt_field_value as rv2 on rv2.resource_id = rm.resource_id
+inner join dbo.resource_mgmt_field_map as rf2 on rf2.field_id = rv2.field_id
+inner join dbo.employment_type_lkup as et on cast(et.emp_type_id as varchar) = rv2.field_value and rf2.fields='Employment Type'
+
+inner join dbo.resource_mgmt_field_value as rv3 on rv3.resource_id = rm.resource_id
+inner join dbo.resource_mgmt_field_map as rf3 on rf3.field_id = rv3.field_id and rf3.fields='Department'
+
+left join (
+	select
+	prm.map_id,
+	prm.resource_id,
+	prm.project_id as project_id,
+	pv1.field_value as project_name,
+	cast(pv2.field_value as date) as start_date,
+	cast(pv3.field_value as date) as end_date,
+	prm.allocation_start_dt as allocation_start_date, prm.allocation_end_dt as allocation_end_date,
+	coalesce(prm.fte, 0.00) as fte,
+	sum(coalesce(prme.fte,0.00))OVER(PARTITION BY prm.map_id, pv1.field_value, cast(pv2.field_value as date),cast(pv3.field_value as date), prm.allocation_start_dt,  prm.allocation_end_dt, prm.fte,
+		prm.created_by, prm.created_date, prm.modified_by, prm.modified_date) as sum_fte,
+	min(coalesce(prme.fte,0.00))OVER(PARTITION BY prm.map_id, pv1.field_value, cast(pv2.field_value as date),cast(pv3.field_value as date), prm.allocation_start_dt,  prm.allocation_end_dt, prm.fte,
+		prm.created_by, prm.created_date, prm.modified_by, prm.modified_date) as min_fte,
+	max(coalesce(prme.fte,0.00))OVER(PARTITION BY prm.map_id, pv1.field_value, cast(pv2.field_value as date),cast(pv3.field_value as date), prm.allocation_start_dt,  prm.allocation_end_dt, prm.fte,
+		prm.created_by, prm.created_date, prm.modified_by, prm.modified_date) as max_fte,
+
+	prm.created_by,
+    prm.created_date,
+    prm.modified_by,
+    prm.modified_date
+	from dbo.project_resource_mapping as prm
+
+	inner join dbo.project_mgmt_field_value as pv1 on pv1.project_id = prm.project_id
+	inner join dbo.project_mgmt_field_map as pf1 on pf1.field_id = pv1.field_id and pf1.fields='Project Name'
+
+	inner join dbo.project_mgmt_field_value as pv2 on pv2.project_id = prm.project_id
+	inner join dbo.project_mgmt_field_map as pf2 on pf2.field_id = pv2.field_id and pf2.fields='Start Date'
+
+	inner join dbo.project_mgmt_field_value as pv3 on pv3.project_id = prm.project_id
+	inner join dbo.project_mgmt_field_map as pf3 on pf3.field_id = pv3.field_id and pf3.fields='End Date'
+
+	inner join dbo.project_resource_mapping_extended as prme on prme.map_id = prm.map_id
+	where convert(varchar, prm.allocation_start_dt , 126)<= :endDate and  convert(varchar, prm.allocation_end_dt , 126)>= :startDate and prm.is_deleted = '0'
+	and prme.allocation_date>=prm.allocation_start_dt and prme.allocation_date<=prm.allocation_end_dt
+
+	--and prme.allocation_date>=:startDate and prme.allocation_date<=:endDate
+
+) prm on prm.resource_id = rm.resource_id
+where rm.resource_id!=0 and (convert(varchar, rm.date_of_join , 126)<= :endDate) and ((rm.last_working_date is null) or (convert(varchar, rm.last_working_date , 126)>= :startDate))
+and rv3.field_value = cast(:departmentId as varchar)
+group by rm.resource_id,  concat(rm.first_name,' ',rm.last_name), role, rv1.field_value, et.employment_type, prm.map_id, prm.project_id,
+prm.project_name, prm.start_date, prm.end_date, prm.allocation_start_date, prm.allocation_end_date, prm.fte, prm.sum_fte,
+prm.min_fte,rm.date_of_join, rm.last_working_date,
+prm.max_fte,
+prm.created_by, prm.created_date, prm.modified_by, prm.modified_date
+order by rm.resource_id;

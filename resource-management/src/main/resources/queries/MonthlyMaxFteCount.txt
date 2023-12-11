@@ -1,0 +1,20 @@
+WITH max_fte_value AS (
+    SELECT sum(prme.fte) AS max_fte FROM dbo.project_resource_mapping as prm
+	join dbo.project_resource_mapping_extended as prme on prm.map_id = prme.map_id 
+	where prm.resource_id = :resourceId and prme.map_id != :mapId and prm.is_deleted = '0'
+	    and prme.allocation_date <= :endDate and prme.allocation_date >= :startDate
+	    group by prme.allocation_date
+
+)
+SELECT
+    (SELECT max(max_fte) FROM max_fte_value) AS max_fte,
+    COUNT(*) AS count_of_max_fte
+FROM
+    (
+        select sum(prme.fte) as sum_fte from dbo.project_resource_mapping as prm
+        join dbo.project_resource_mapping_extended as prme on prm.map_id = prme.map_id
+        where prm.resource_id = :resourceId and prme.map_id != :mapId and prm.is_deleted = '0'
+            and prme.allocation_date <= :endDate and prme.allocation_date >= :startDate
+            group by prme.allocation_date
+    ) as prm_sum
+where prm_sum.sum_fte = (SELECT max(max_fte) FROM max_fte_value);

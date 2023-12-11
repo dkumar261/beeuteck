@@ -1,0 +1,32 @@
+WITH DepartmentHierarchy AS (
+    SELECT
+        dm.department_id,
+        dm.department AS name,
+        dm.parent_department_id,
+        1 AS depth,
+        CAST(dm.department_id AS NVARCHAR(MAX)) AS path,
+        CAST(dm.department AS NVARCHAR(MAX)) AS path_by_name
+    FROM dbo.department_master AS dm
+    WHERE dm.parent_department_id IS NULL AND dm.department_id != 0
+
+    UNION ALL
+
+    SELECT
+        dm1.department_id,
+        dm1.department,
+        dm1.parent_department_id,
+        dh.depth + 1,
+        dh.path + '->' + CAST(dm1.department_id AS NVARCHAR(MAX)),
+        dh.path_by_name + '->' + dm1.department
+    FROM dbo.department_master AS dm1
+    JOIN DepartmentHierarchy AS dh ON dm1.parent_department_id = dh.department_id
+    WHERE dh.depth < 10
+)
+SELECT
+    department_id,
+    depth AS depth_order,
+    name AS department_name,
+    path AS ancestral_path,
+    path_by_name AS ancestral_path_by_name
+FROM DepartmentHierarchy
+ORDER BY path, ancestral_path_by_name;

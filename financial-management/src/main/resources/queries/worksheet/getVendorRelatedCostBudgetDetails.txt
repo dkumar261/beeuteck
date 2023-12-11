@@ -1,0 +1,28 @@
+select
+    vrcb.vendor_related_cost_budget_id,
+    ffm.fields,
+    fmfv.field_value as picklist_id,
+    CASE
+
+        WHEN ffm.fields = 'Project' and ffm.setting_type = 2 THEN
+        (select pfv.field_value
+         from org_manager.project_mgmt_field_value as pfv
+         join org_manager.project_mgmt_field_map as pfm on pfm.field_id = pfv.field_id
+         where cast(pfv.project_id as text) = fmfv.field_value and pfm.fields = 'Project Name')
+
+        WHEN ffm.fields = 'Location' and ffm.setting_type = 2 THEN
+        (select location from org_manager.location_master where cast(location_id as text)=fmfv.field_value)
+
+        WHEN ffm.field_type = 'Picklist' THEN
+        (select picklist_value from finance_custom_pick_list where cast(id as text)=fmfv.field_value)
+
+        WHEN ffm.field_type = 'Picklist-Multiselect' then
+        (select string_agg(picklist_value,',') from finance_custom_pick_list where cast(id as text)= any(string_to_array(fmfv.field_value,',')))
+
+        ELSE fmfv.field_value END as field_value,
+    ffm.field_type,
+    vrcb.financial_year,vrcb.row_order,vrcb.is_active,ffm.field_id
+from vendor_related_cost_budget as vrcb
+left join finance_mgmt_field_value_budget_vendor_related as fmfv on fmfv.vendor_related_cost_budget_id = vrcb.vendor_related_cost_budget_id
+left join finance_mgmt_field_map as ffm on ffm.field_id = fmfv.field_id
+where vrcb.financial_year= :financialYear and vrcb.is_active = true and ffm.enabled = true

@@ -1,0 +1,17 @@
+select pm.project_id, pfv1.field_value as project_name, pfv2.field_value as deadline, pfv3.field_value as progress, ps.color as status_color
+from org_manager.project_master as pm
+
+join org_manager.project_mgmt_field_value  as pfv1 on pm.project_id = pfv1.project_id
+join org_manager.project_mgmt_field_map as pfm1 on pfv1.field_id = pfm1.field_id and pfm1.fields = 'Project Name'
+
+join org_manager.project_mgmt_field_value  as pfv2 on pm.project_id = pfv2.project_id
+join org_manager.project_mgmt_field_map as pfm2 on pfv2.field_id = pfm2.field_id and pfm2.fields = 'End Date'
+and pfv2.field_value > cast(current_date as text)
+
+join org_manager.project_mgmt_field_value  as pfv3 on pm.project_id = pfv3.project_id
+join org_manager.project_mgmt_field_map as pfm3 on pfv3.field_id = pfm3.field_id and pfm3.fields = 'Progress'
+
+join org_manager.project_mgmt_field_value  as pfv4 on pm.project_id = pfv4.project_id
+join org_manager.project_mgmt_field_map as pfm4 on pfv4.field_id = pfm4.field_id and pfm4.fields = 'Status'
+left join org_manager.proj_status_lkup as ps on cast(ps.status_id as text) = pfv4.field_value
+order by deadline limit 5

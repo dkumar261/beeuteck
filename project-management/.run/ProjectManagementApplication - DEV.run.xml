@@ -1,0 +1,18 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ProjectManagementApplication - DEV" type="Application" factoryName="Application">
+    <envs>
+      <env name="spring.profiles.active" value="dev" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="com.forecastera.service.projectmanagement.ProjectManagementApplication" />
+    <module name="project-management" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="com.forecastera.service.projectmanagement.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

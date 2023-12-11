@@ -1,0 +1,45 @@
+select rm.resource_id as resource_id, concat(rm.first_name, ' ',rm.last_name) as resource_name,
+
+(select string_agg(r.role,',') from dbo.role_master as r where exists (select value FROM string_split(coalesce(rfv1.field_value,''),',') as id WHERE r.role_id = TRY_CAST(id.value AS int))) as role,
+
+coalesce((select string_agg(r.skill,',') from dbo.skill_master as r where exists (select value FROM string_split(coalesce(rfv2.field_value,''),',') as id where r.skill_id = TRY_CAST(id.value AS int))),'') as skill,
+
+--(
+--	select string_agg(r.location,',') from dbo.location_master as r
+--	where cast(r.location_id as varchar) = any(string_to_array(coalesce(rfv3.field_value,''),','))
+--) as location,
+coalesce((select string_agg(r.employment_type,',') from dbo.employment_type_lkup as r where exists (select value FROM string_split(coalesce(rfv4.field_value,''),',') as id where r.emp_type_id = TRY_CAST(id.value AS int))),'') as employee_type,
+coalesce(rfv5.field_value,'') as employee_location
+
+from dbo.resource_master as rm
+
+inner join dbo.resource_mgmt_field_value as rfv1 on rm.resource_id = rfv1.resource_id
+inner join dbo.resource_mgmt_field_map as rfm1 on rfv1.field_id = rfm1.field_id and rfm1.fields = 'Role'
+
+left join(
+    select rm2.resource_id, rfv2.field_value
+    from dbo.resource_master as rm2
+    join dbo.resource_mgmt_field_value as rfv2 on rm2.resource_id = rfv2.resource_id
+    join dbo.resource_mgmt_field_map as rfm2 on rfv2.field_id = rfm2.field_id and rfm2.fields = 'Skills'
+) as rfv2 on rfv2.resource_id = rm.resource_id
+
+--inner join dbo.resource_mgmt_field_value as rfv3 on rm.resource_id = rfv3.resource_id
+--inner join dbo.resource_mgmt_field_map as rfm3 on rfv3.field_id = rfm3.field_id and rfm3.fields = 'Location'
+
+inner join dbo.resource_mgmt_field_value as rfv4 on rm.resource_id = rfv4.resource_id
+inner join dbo.resource_mgmt_field_map as rfm4 on rfv4.field_id = rfm4.field_id and rfm4.fields = 'Employment Type'
+
+left join(
+    select rm5.resource_id, rfv5.field_value
+    from dbo.resource_master as rm5
+    join dbo.resource_mgmt_field_value as rfv5 on rm5.resource_id = rfv5.resource_id
+    join dbo.resource_mgmt_field_map as rfm5 on rfv5.field_id = rfm5.field_id and rfm5.fields = 'Employee Location'
+) as rfv5 on rfv5.resource_id = rm.resource_id
+
+where rm.resource_id!=0 and rm.date_of_join<=:startDate and ((rm.last_working_date is null) or (rm.last_working_date>=:endDate))
+and ( (:roles = '') OR exists (select 1 from string_split(COALESCE(rfv1.field_value, ''), ',') AS s1 where s1.value IN (select value FROM string_split(:roles, ','))))
+and ( (:skills = '') OR exists (select 1 from string_split(COALESCE(rfv2.field_value, ''), ',') AS s1 where s1.value IN (select value FROM string_split(:skills, ','))))
+--and ( (:location='') or (string_to_array(:location,',') @> string_to_array(rfv3.field_value,',')))
+and ( (:employeeType ='') or (select value from string_split(:employeeType,',')) in (select value  from string_split(rfv4.field_value,',')))
+and ( (:employeeLocation ='') or (select value  from string_split(:employeeLocation,',')) in  (select value  from string_split(coalesce(rfv5.field_value,''),',')))
+and concat(rm.first_name,rm.last_name) like :resourceName

@@ -1,0 +1,24 @@
+select deb.direct_employee_det_budget_id,deb.created_date,deb.modified_date,rmcreated.first_name as created_by,
+rmmodified.first_name as modified_by,
+ffm.fields,deb.financial_year,deb.row_order,deb.is_active,
+fvb.field_value as picklist_id,
+CASE
+	WHEN (ffm.fields = 'Designation') and ffm.setting_type = 2 THEN
+	(select string_agg(role,',') from role_master where cast(role_id as text) = any(string_to_array(fvb.field_value,',')))
+
+	WHEN ffm.fields = 'Location' and ffm.setting_type = 2 THEN
+            (select location from org_manager.location_master where cast(location_id as text)=fvb.field_value)
+
+	WHEN ffm.field_type = 'Picklist' THEN
+	(select picklist_value from finance_custom_pick_list where cast(id as text)=fvb.field_value)
+
+	WHEN ffm.field_type = 'Picklist-Multiselect' then
+	(select string_agg(picklist_value,',') from finance_custom_pick_list where cast(id as text)= any(string_to_array(fvb.field_value,',')))
+	ELSE fvb.field_value END as field_value,
+ffm.field_type,ffm.field_id
+from direct_employee_det_budget as deb
+	left join finance_mgmt_field_value_budget_direct_emp as fvb on deb.direct_employee_det_budget_id = fvb.direct_employee_det_budget_id
+	left join finance_mgmt_field_map as ffm on ffm.field_id = fvb.field_id
+	left join resource_master as rmcreated on rmcreated.resource_id = deb.created_by
+	left join resource_master as rmmodified on rmmodified.resource_id = deb.modified_by
+where deb.financial_year= :financialYear and deb.is_active = true and ffm.enabled = true

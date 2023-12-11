@@ -1,0 +1,18 @@
+select
+'Other Vendor Expense' as title,
+sum(coalesce(o2.jan,0)) as jan,sum(coalesce(o2.feb,0)) as feb,sum(coalesce(o2.mar,0)) as mar,
+sum(coalesce(o2.apr,0)) as apr,sum(coalesce(o2.may,0)) as may,sum(coalesce(o2.jun,0)) as jun,
+sum(coalesce(o2.jul,0)) as jul,sum(coalesce(o2.aug,0)) as aug,sum(coalesce(o2.sep,0)) as sep,
+sum(coalesce(o2.oct,0)) as oct,sum(coalesce(o2.nov,0)) as nov,sum(coalesce(o2.dec,0)) as dec
+
+
+from org_manager.vendor_related_cost_budget o
+join org_manager.finance_mgmt_field_value_budget_vendor_related as o1 on o.vendor_related_cost_budget_id = o1.vendor_related_cost_budget_id
+join org_manager.vendor_related_cost_budget_expense as o2 on o2.vendor_related_cost_budget_id = o1.vendor_related_cost_budget_id
+
+join org_manager.finance_mgmt_field_map as o4 on o4.field_id = o1.field_id and o4.fields='Vendor Expense' and o4.table_type=4
+
+
+
+join org_manager.finance_mgmt_field_value_budget_vendor_related as o6 on o6.vendor_related_cost_budget_id = o.vendor_related_cost_budget_id and o6.field_value='Offshore'
+where  o.financial_year= :financialYear and o.is_active = true

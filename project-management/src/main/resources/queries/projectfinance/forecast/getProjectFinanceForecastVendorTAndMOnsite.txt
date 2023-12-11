@@ -1,0 +1,16 @@
+select
+ 'T&M' as title,
+ sum(coalesce(o2.jan,0)) as jan,sum(coalesce(o2.feb,0)) as feb,sum(coalesce(o2.mar,0)) as mar,
+ sum(coalesce(o2.apr,0)) as apr,sum(coalesce(o2.may,0)) as may,sum(coalesce(o2.jun,0)) as jun,
+ sum(coalesce(o2.jul,0)) as jul,sum(coalesce(o2.aug,0)) as aug,sum(coalesce(o2.sep,0)) as sep,
+ sum(coalesce(o2.oct,0)) as oct,sum(coalesce(o2.nov,0)) as nov,sum(coalesce(o2.dec,0)) as dec
+
+from org_manager.vendor_employment_details_forecast o
+join org_manager.finance_mgmt_field_value_forecast_vendor_emp as o1 on o.vendor_employment_details_forecast_id = o1.vendor_employment_details_forecast_id
+join org_manager.vendor_employment_details_forecast_expense as o2 on o2.vendor_employment_details_forecast_id = o1.vendor_employment_details_forecast_id
+join org_manager.finance_mgmt_field_value_forecast_vendor_emp as o3 on o.vendor_employment_details_forecast_id = o3.vendor_employment_details_forecast_id
+join org_manager.finance_mgmt_field_map as o4 on o4.field_id = o3.field_id  and o4.table_type=3
+join org_manager.finance_mgmt_field_map as o5 on o5.field_id = o1.field_id  and o5.table_type=3
+
+where o5.fields='Work Location' and o1.field_value ='Onsite' and o4.fields='Project'
+and o3.field_value = any(string_to_array(:projectIds,',')) and o.financial_year=:financialYear and o.is_active = true

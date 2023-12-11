@@ -1,0 +1,24 @@
+select rm.resource_id, concat(rm.first_name, ' ', rm.last_name) as resource_name, dm.department,
+case when (rmgr.manager_id is null or rmgr.manager_id = '') then null else cast(rmgr.manager_id as int) end as manager_id,
+
+(select string_agg(rr.role,',') from dbo.role_master as rr where exists (select value from string_split(rfv2.field_value, ',') as id where rr.role_id = try_cast(id.value AS int))) as role
+
+from dbo.resource_master as rm
+
+join dbo.resource_mgmt_field_value as rfv1 on rfv1.resource_id = rm.resource_id
+join dbo.resource_mgmt_field_map as rfm1 on rfm1.field_id = rfv1.field_id
+join dbo.department_master as dm on cast(dm.department_id as varchar) = rfv1.field_value
+
+join dbo.resource_mgmt_field_value as rfv2 on rfv2.resource_id = rm.resource_id
+join dbo.resource_mgmt_field_map as rfm2 on rfm2.field_id = rfv2.field_id
+
+left join(
+	select rm.resource_id, rfv.field_value as manager_id
+	from dbo.resource_master as rm
+	join dbo.resource_mgmt_field_value as rfv on rfv.resource_id = rm.resource_id
+	join dbo.resource_mgmt_field_map as rfm on rfm.field_id = rfv.field_id
+	where rfm.fields = 'Reporting Manager'
+) as rmgr on rmgr.resource_id = rm.resource_id
+where rfm1.fields = 'Department' and rfm2.fields = 'Role'
+and (rm.last_working_date is null or rm.last_working_date>=:currentDate)
+order by rm.resource_id

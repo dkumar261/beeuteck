@@ -1,0 +1,17 @@
+select rm.resource_id,
+    CASE WHEN rm.date_of_join > CAST(:startDate AS DATE) THEN rm.date_of_join ELSE CAST(:startDate AS DATE) END AS start_date,
+    CASE WHEN rm.last_working_date < CAST(:endDate AS DATE) THEN rm.last_working_date ELSE CAST(:endDate AS DATE) END AS end_date,
+    COALESCE(prm.sum_fte, 0.00) AS fte_worked
+
+from dbo.resource_master as rm
+left join (
+	SELECT prm.resource_id, sum(prme.fte) as sum_fte
+	FROM dbo.project_resource_mapping as prm
+	join dbo.project_resource_mapping_extended as prme on prm.map_id = prme.map_id
+	WHERE prm.is_deleted = '0'
+	and prme.allocation_date <= case when :endDate < prm.allocation_end_dt then :endDate else prm.allocation_end_dt end
+	and prme.allocation_date >= case when :startDate > prm.allocation_start_dt then :startDate else prm.allocation_start_dt end
+	group by prm.resource_id
+) prm ON rm.resource_id = prm.resource_id
+where rm.resource_id in :resourceIds
+order by rm.resource_id

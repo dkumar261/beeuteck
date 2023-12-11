@@ -1,0 +1,90 @@
+select rqr.request_id, rqr.requested_resource_id as resource_id, coalesce(rm.resource_name, 'Unnamed') as resource_name,
+null as role_id,
+case
+	when (rqr.requested_resource_id is not null)
+	then (
+
+		(
+			select string_agg(r.role,',') from dbo.role_master as r
+			where cast(r.role_id as varchar) in (select value from string_split(rm.role,','))
+		)
+		)
+	else (
+		coalesce((
+			select string_agg(r.role,',') from dbo.role_master as r
+			where cast(r.role_id as varchar) in (select value from string_split(prm.role_id,','))
+		), 'All'))
+end as role,
+case
+	when (rqr.requested_resource_id is not null)
+	then (rm.employment_type)
+	else (
+coalesce((
+			select string_agg(et.employment_type,',') from dbo.employment_type_lkup as et
+			where cast(et.emp_type_id as varchar) in (select value from string_split(prm.emp_type_id,','))
+		), 'All'))
+end as employment_type,
+rm.department as department,
+rqr.project_id as project_id, pfv.field_value as project_name,
+rqr.allocation_start_date as allocation_start_date,
+rqr.allocation_end_date as allocation_end_date,
+rqr.request_status as request_status,
+rqr.created_by as created_by,
+rqr.created_date as created_date,
+rqr.modified_by as modified_by,
+rqr.modified_date as modified_date,
+COALESCE(SUM(prme.fte),0.00) AS avg_allocated_fte,
+COALESCE(SUM(prme.requested_fte),0.00) AS avg_requested_fte,
+rqr.pm_last_action as last_action_by_project_manager,
+rqr.rm_last_action as last_action_by_resource_manager,
+coalesce(rqr.viewed_by_pm_ids,'') as viewed_by_ids,
+rqr.notify_pm as notify,
+'0' as show_bold
+
+
+from dbo.requested_resource as rqr
+join dbo.project_mgmt_field_value as pfv on pfv.project_id = rqr.project_id
+join dbo.project_mgmt_field_map as pfm on pfm.field_id = pfv.field_id and pfm.fields = 'Project Name'
+
+join dbo.project_resource_mapping as prm on prm.request_id = rqr.request_id
+join dbo.project_resource_mapping_extended as prme on prme.map_id = prm.map_id
+
+left join (
+	select rm1.resource_id, concat(rm1.first_name, ' ', rm1.last_name) as resource_name,
+	rfv.field_value as role, et.employment_type as employment_type, dm.department as department
+	from dbo.resource_master as rm1
+	join dbo.resource_mgmt_field_value as rfv on rfv.resource_id = rm1.resource_id
+	join dbo.resource_mgmt_field_map as rfm on rfm.field_id = rfv.field_id and rfm.fields = 'Role'
+	join dbo.resource_mgmt_field_value as rfv1 on rfv1.resource_id = rm1.resource_id
+	join dbo.resource_mgmt_field_map as rfm1 on rfm1.field_id = rfv1.field_id and rfm1.fields = 'Employment Type'
+	join dbo.employment_type_lkup as et on cast(et.emp_type_id as varchar) = rfv1.field_value
+	join dbo.resource_mgmt_field_value as rfv2 on rfv2.resource_id = rm1.resource_id
+    join dbo.resource_mgmt_field_map as rfm2 on rfm2.field_id = rfv2.field_id and rfm2.fields = 'Department'
+    join dbo.department_master as dm on cast(dm.department_id as varchar) = rfv2.field_value
+) as rm on rm.resource_id = rqr.requested_resource_id
+where prm.is_deleted = '0' and rqr.notify_pm = '1'
+group by  rqr.request_id,
+                rqr.project_id,
+                pfv.field_value,
+                rqr.requested_resource_id,
+                rm.resource_name,
+                rqr.requested_resource_id,
+                rm.role,
+                prm.role_id,
+                prm.emp_type_id,
+                rm.employment_type,
+				rm.department,
+                rqr.allocation_start_date,
+                rqr.allocation_end_date,
+                rqr.request_status,
+				prme.fte,
+				prme.requested_fte,
+                rqr.created_date,
+                rqr.created_by,
+                rqr.modified_date,
+                rqr.modified_by,
+                rqr.notify_pm,
+                rqr.pm_last_action,
+                rqr.rm_last_action,
+				rqr.viewed_by_pm_ids
+order by rqr.created_date desc, rqr.modified_date desc

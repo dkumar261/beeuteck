@@ -1,0 +1,9 @@
+SELECT prm.resource_id, prme.allocation_date, sum(prme.fte) as sum_fte
+from dbo.project_resource_mapping as prm
+join dbo.project_resource_mapping_extended as prme on prm.map_id = prme.map_id
+WHERE prm.is_deleted = '0'
+and prme.allocation_date <= :allocationEndDate
+and prme.allocation_date >= :allocationStartDate
+and prm.resource_id = :resourceId
+group by prm.resource_id, prme.allocation_date
+order by prme.allocation_date

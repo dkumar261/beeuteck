@@ -1,0 +1,30 @@
+select project_id,round(sum(total_salary),2) as expense from
+(select
+o1.resource_id as resource_id,o2.project_id,
+o2.fte as fte,o8.field_value as salary,
+greatest(:startDate, o2.allocation_start_dt) as start_date,
+least(:endDate, o2.allocation_end_dt) as end_date,
+
+((cast(least(:endDate, o2.allocation_end_dt) as date) - (cast(greatest(:startDate, o2.allocation_start_dt) as date)) +1)/30.00) as present_month,
+
+(
+	cast(o8.field_value as int) * o2.fte
+	* ((cast(least(:endDate, o2.allocation_end_dt) as date) - (cast(greatest(:startDate, o2.allocation_start_dt) as date)) +1)/30.00)
+)  as total_salary
+
+from org_manager.resource_master as o1
+	join org_manager.project_resource_mapping as o2 on o2.resource_id = o1.resource_id
+	join org_manager.project_master as o3 on o3.project_id = o2.project_id
+	
+	join org_manager.finance_mgmt_field_value_forecast_direct_emp as o6 on o6.field_value= cast(o1.resource_id as text)
+	join org_manager.finance_mgmt_field_map as o7 on o7.field_id = o6.field_id
+	join org_manager.direct_employee_det_forecast as o10 on o10.direct_employee_det_forecast_id = o6.direct_employee_det_forecast_id
+	
+	join org_manager.finance_mgmt_field_value_forecast_direct_emp as o8 on o8.direct_employee_det_forecast_id= o6.direct_employee_det_forecast_id
+	join org_manager.finance_mgmt_field_map as o9 on o9.field_id = o8.field_id
+	
+where o7.fields='Employee ID' and o10.is_active = true
+and o9.fields='Salary' 
+and o2.allocation_start_dt<= cast(:endDate as date) and o2.allocation_end_dt>= cast(:startDate as date) and o2.is_deleted = false
+group by o1.resource_id,o2.project_id,o8.field_value,o2.allocation_start_dt,o2.allocation_end_dt, o2.fte) as project_wise_forecast_total
+group by project_id

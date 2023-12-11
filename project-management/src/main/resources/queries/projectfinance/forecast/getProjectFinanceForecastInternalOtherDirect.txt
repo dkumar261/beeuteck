@@ -1,0 +1,19 @@
+select o3.picklist_value as title,
+sum(coalesce(o2.jan,0)) as jan,sum(coalesce(o2.feb,0)) as feb,sum(coalesce(o2.mar,0)) as mar,
+sum(coalesce(o2.apr,0)) as apr,sum(coalesce(o2.may,0)) as may,sum(coalesce(o2.jun,0)) as jun,
+sum(coalesce(o2.jul,0)) as jul,sum(coalesce(o2.aug,0)) as aug,sum(coalesce(o2.sep,0)) as sep,
+sum(coalesce(o2.oct,0)) as oct,sum(coalesce(o2.nov,0)) as nov,sum(coalesce(o2.dec,0)) as dec
+
+from org_manager.other_direct_inhouse_cost_forecast as o5
+join org_manager.finance_mgmt_field_value_forecast_other_direct as o1 on o1.other_direct_inhouse_cost_forecast_id = o5.other_direct_inhouse_cost_forecast_id
+join org_manager.other_direct_inhouse_cost_forecast_expense as o2 on o2.other_direct_inhouse_cost_forecast_id = o1.other_direct_inhouse_cost_forecast_id
+join org_manager.finance_custom_pick_list as o3 on cast(o3.id as text) = o1.field_value
+join org_manager.finance_mgmt_field_map as o4 on o4.field_id = o1.field_id  and o4.fields='Expense Category' and o4.table_type=2
+
+
+join org_manager.finance_mgmt_field_value_forecast_other_direct as o6 on o6.other_direct_inhouse_cost_forecast_id = o5.other_direct_inhouse_cost_forecast_id
+and o6.field_value = any(string_to_array(:projectIds,','))
+
+join org_manager.finance_mgmt_field_map as o7 on o7.field_id = o6.field_id  and o7.fields='Project' and o7.table_type=2
+where o5.financial_year = :financialYear and o5.is_active = true
+group by o3.picklist_value

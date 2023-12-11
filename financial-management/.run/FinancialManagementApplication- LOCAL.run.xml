@@ -1,0 +1,18 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="FinancialManagementApplication - LOCAL" type="Application" factoryName="Application">
+    <envs>
+      <env name="spring.profiles.active" value="local" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="com.forecastera.service.financialmanagement.FinancialManagementApplication" />
+    <module name="financial-management" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="com.forecastera.service.financialmanagement.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -1,0 +1,19 @@
+select cast(o8.field_value as int) as project_id,
+(sum(coalesce(o2.jan,0.00)) + sum(coalesce(o2.feb,0.00))+ sum(coalesce(o2.mar,0.00)) +
+  sum(coalesce(o2.apr,0.00)) +sum(coalesce(o2.may,0.00))+sum(coalesce(o2.jun,0.00))+
+  sum(coalesce(o2.jul,0.00)) +sum(coalesce(o2.aug,0.00)) +sum(coalesce(o2.sep,0.00))+
+  sum(coalesce(o2.oct,0.00)) +sum(coalesce(o2.nov,0.00)) +sum(coalesce(o2.dec,0.00)) ) as expense
+
+
+from org_manager.vendor_related_cost_forecast o
+join org_manager.finance_mgmt_field_value_forecast_vendor_related as o1 on o.vendor_related_cost_forecast_id = o1.vendor_related_cost_forecast_id
+join org_manager.vendor_related_cost_forecast_expense as o2 on o2.vendor_related_cost_forecast_id = o1.vendor_related_cost_forecast_id
+
+join org_manager.finance_mgmt_field_map as o4 on o4.field_id = o1.field_id and o4.fields='Vendor Expense' and o4.table_type=4
+
+join org_manager.finance_mgmt_field_value_forecast_vendor_related as o8 on o.vendor_related_cost_forecast_id = o8.vendor_related_cost_forecast_id
+join org_manager.finance_mgmt_field_map as o6 on o6.field_id = o8.field_id and o6.fields='Project' and o6.table_type=4
+join org_manager.project_master as pm on cast(pm.project_id as text) = o8.field_value
+
+where o.financial_year= :financialYear and o.is_active = true
+group by o8.field_value, o2.jan, o2.feb, o2.mar, o2.apr, o2.may, o2.jun, o2.jul, o2.aug,o2.sep, o2.oct, o2.nov, o2.dec

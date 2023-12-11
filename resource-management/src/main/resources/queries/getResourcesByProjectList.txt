@@ -1,0 +1,24 @@
+select pm.project_id as project_id, coalesce(prm.resource_count,0) as resource_count, pfv3.field_value as project_name
+from dbo.project_master as pm
+
+inner join dbo.project_mgmt_field_value as pfv1 on pfv1.project_id = pm.project_id
+inner join dbo.project_mgmt_field_map as pfm1 on pfv1.field_id = pfm1.field_id
+
+inner join dbo.project_mgmt_field_value as pfv2 on pfv2.project_id = pm.project_id
+inner join dbo.project_mgmt_field_map as pfm2 on pfv2.field_id = pfm2.field_id
+
+inner join dbo.project_mgmt_field_value as pfv3 on pfv3.project_id = pm.project_id
+inner join dbo.project_mgmt_field_map as pfm3 on pfv3.field_id = pfm3.field_id
+
+left join (
+	select project_id, count(distinct(prm.resource_id)) as resource_count
+	from dbo.project_resource_mapping as prm
+	where prm.is_deleted = '0'
+	group by project_id
+) as prm on prm.project_id = pm.project_id
+
+where pfm1.fields = 'Start Date' and pfm2.fields = 'End Date'
+and pfm3.fields = 'Project Name'
+and pfv1.field_value <= cast(:endDate as varchar)
+and pfv2.field_value >= cast(:startDate as varchar)
+order by resource_count desc, project_name;

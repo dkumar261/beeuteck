@@ -1,0 +1,14 @@
+select rm.resource_id, concat(rm.first_name, ' ', rm.last_name) as resource_name, rm.date_of_join, rm.last_working_date,
+coalesce(prm.fte_sum, 0.00) as sum_fte
+from dbo.resource_master as rm
+left join (
+    select prm.resource_id, sum(prme.fte) as fte_sum
+    from dbo.project_resource_mapping as prm
+    join dbo.project_resource_mapping_extended as prme on prm.map_id = prme.map_id
+    where prm.is_deleted = '0' and prme.allocation_date >= :startDate
+    and prme.allocation_date<= :endDate
+	group by prm.resource_id
+) as prm on prm.resource_id = rm.resource_id
+where rm.resource_id in :resourceIds
+and rm.date_of_join<= :endDate and (rm.last_working_date is null or rm.last_working_date>= :startDate) 
+group by rm.resource_id, rm.first_name, rm.last_name, rm.date_of_join, rm.last_working_date, prm.fte_sum

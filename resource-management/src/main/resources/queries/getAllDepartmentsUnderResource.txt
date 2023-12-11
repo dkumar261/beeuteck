@@ -1,0 +1,15 @@
+select rm.resource_id, rm.first_name +' '+ rm.last_name as resourceName, dm.department_id as departmentId,     dm.department as departmentName,
+coalesce(dm1.department_id, null) as managedDepartmentId, coalesce(dm1.department, null) as managedDepartmentName
+
+from resource_master as rm
+
+join resource_mgmt_field_value as rfv1 on rm.resource_id = rfv1.resource_id
+join resource_mgmt_field_map as rfm1 on rfm1.field_id = rfv1.field_id
+
+join resource_mgmt_field_value as rfv on rm.resource_id = rfv.resource_id
+join resource_mgmt_field_map as rfm on rfm.field_id = rfv.field_id
+join department_master as dm on CONVERT(NVARCHAR, dm.department_id) = rfv.field_value
+
+left join department_master as dm1 on rm.resource_id = dm1.resource_id
+
+where rfm.fields = 'Department' and rfm1.fields = 'Email' and rfv1.field_value = :email

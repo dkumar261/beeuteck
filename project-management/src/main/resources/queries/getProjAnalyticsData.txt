@@ -1,0 +1,39 @@
+select pm.project_id as project_id,pm.created_date as created_date, pm.modified_date as modified_date, pm.created_by as created_by,
+pm.modified_by as modified_by, pfm.field_id, pfm.fields,
+CASE
+	WHEN pfm.field_type = 'Picklist' and pfm.setting_type=3 then
+	(select picklist_value from dbo.proj_custom_pick_list where cast(id as varchar)=pfv.field_value)
+
+	WHEN pfm.field_type = 'Picklist-Multiselect' and pfm.setting_type=3 then
+    (SELECT STRING_AGG(picklist_value, ',') FROM dbo.proj_custom_pick_list WHERE id IN (SELECT value FROM STRING_SPLIT(pfv.field_value, ',')))
+
+	WHEN pfm.fields = 'Status' then
+	(select ps.status from dbo.proj_status_lkup as ps where cast(ps.status_id as varchar)=pfv.field_value)
+
+	WHEN pfm.fields = 'Priority' then
+	(select pp.priority from dbo.proj_priority_lkup as pp where cast(pp.priority_id as varchar)=pfv.field_value)
+
+	WHEN pfm.fields = 'Project Type' then
+	(select pt.type from dbo.proj_type_lkup as pt where cast(pt.type_id as varchar)=pfv.field_value)
+
+	WHEN pfm.fields = 'Project Owner' then
+	(select concat(rm.first_name,' ',rm.last_name) from dbo.resource_master as rm where cast(rm.resource_id as varchar)=pfv.field_value)
+
+	WHEN pfm.fields = 'Department' then
+    (select dm.department from dbo.department_master as dm where cast(dm.department_id as varchar)=pfv.field_value)
+
+ELSE pfv.field_value END as field_value, pfm.field_type as field_type
+FROM dbo.project_master as pm
+LEFT JOIN dbo.project_mgmt_field_value as pfv on pm.project_id = pfv.project_id
+LEFT JOIN dbo.project_mgmt_field_map as pfm on pfm.field_id = pfv.field_id
+where pfm.is_enabled = '1' and pfm.proj_analysis_view = '1' and pm.project_id in :projectIds and
+(
+	(select cast(pv.field_value as date) from dbo.project_mgmt_field_value as pv
+	inner join dbo.project_mgmt_field_map as pf on pv.field_id = pf.field_id
+	where pv.project_id = pm.project_id and pf.fields = 'Start Date') <= :endDate
+
+and
+	(select cast(pv.field_value as date) from dbo.project_mgmt_field_value as pv
+	inner join dbo.project_mgmt_field_map as pf on pv.field_id = pf.field_id
+	where pv.project_id = pm.project_id and pf.fields = 'End Date') >= :startDate
+)

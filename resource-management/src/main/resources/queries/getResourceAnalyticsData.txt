@@ -1,0 +1,50 @@
+select rm.resource_id as resource_id, rm.first_name as first_name, rm.last_name as last_name, rm.date_of_join as date_of_join,
+rm.last_working_date as last_working_date,rm.created_date as created_date, rm.modified_date as modified_date,rm.created_by as created_by,
+rm.modified_by as modified_by,
+coalesce(prm.sum_fte, 0.00) as allocation,
+case when rm.date_of_join >:startDate then rm.date_of_join else :startDate end  as start_date,
+case when rm.last_working_date < :endDate then rm.last_working_date else :endDate end as end_date,
+rfm.field_id,
+rfm.fields,
+CASE
+	WHEN rfm.resource_type = 'Picklist' and rfm.setting_type=3 then
+	(select picklist_value from dbo.resource_custom_pick_list where CAST(id as varchar)=rfv.field_value )
+
+	WHEN rfm.resource_type = 'Picklist-Multiselect' and rfm.setting_type=3 then
+	(select string_agg(picklist_value,',') from dbo.resource_custom_pick_list where cast(id as varchar) in (select value from string_split(rfv.field_value,',')))
+
+	WHEN rfm.fields = 'Skills' then
+	(select string_agg(rs.skill,',') from dbo.skill_master as rs where cast(rs.skill_id as varchar) in (select value from string_split(rfv.field_value,',')))
+
+	WHEN rfm.fields = 'Role' then
+	(select string_agg(rr.role,',') from dbo.role_master as rr where cast(rr.role_id as varchar) in (select value from string_split(rfv.field_value,',')))
+
+	WHEN rfm.fields = 'Department' then
+	(select rd.department from dbo.department_master as rd where cast(rd.department_id as varchar)=rfv.field_value )
+
+	WHEN rfm.fields = 'Location' then
+	(select gsl.location from dbo.location_master as gsl where cast(gsl.location_id as varchar)=rfv.field_value)
+
+	WHEN rfm.fields = 'Employment Type' then
+	(select et.employment_type from dbo.employment_type_lkup as et where cast(et.emp_type_id as varchar)=rfv.field_value )
+
+	WHEN rfm.fields = 'Reporting Manager' then
+	(select concat(rm.first_name,' ',rm.last_name) from dbo.resource_master as rm where cast(rm.resource_id as varchar)=rfv.field_value )
+
+ELSE rfv.field_value END as field_value, rfm.resource_type as resource_type
+FROM dbo.resource_master as rm
+LEFT JOIN dbo.resource_mgmt_field_value as rfv on rm.resource_id = rfv.resource_id
+LEFT JOIN dbo.resource_mgmt_field_map as rfm on rfm.field_id = rfv.field_id
+left join (
+	SELECT prm.resource_id, sum(prme.fte) as sum_fte
+	FROM dbo.project_resource_mapping as prm
+	join dbo.project_resource_mapping_extended as prme on prm.map_id = prme.map_id
+	WHERE prm.is_deleted = '0'
+	AND prme.allocation_date <= IIF(prme.allocation_date <= :endDate, :endDate, prm.allocation_end_dt)
+    AND prme.allocation_date >= IIF(prme.allocation_date >= :startDate, :startDate, prm.allocation_start_dt)
+	group by prm.resource_id
+) prm ON rm.resource_id = prm.resource_id
+where rfm.enabled = '1' and rfm.resource_analytics_view = '1'
+and rm.resource_id!=0 and rm.date_of_join<= :endDate and (rm.last_working_date>= :startDate or rm.last_working_date is null)
+and rm.resource_id in :resourceIds
+order by rm.resource_id desc;

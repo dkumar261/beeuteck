@@ -1,0 +1,23 @@
+select rm.resource_id, concat(rm.first_name,' ',rm.last_name) as resource_name, dm.department as department_name,
+case when rm.date_of_join >:startDate then rm.date_of_join else :startDate end  as start_date,
+case when rm.last_working_date < :endDate then rm.last_working_date else :endDate end as end_date,
+coalesce(prm.sum_fte, 0.00) as sum_fte
+
+from dbo.resource_master as rm
+
+join dbo.resource_mgmt_field_value as rfv on rfv.resource_id = rm.resource_id
+join dbo.resource_mgmt_field_map as rfm on rfm.field_id = rfv.field_id and rfm.fields = 'Department'
+join dbo.department_master as dm on cast(dm.department_id as varchar) = rfv.field_value
+
+left join (
+	SELECT prm.resource_id, sum(prme.fte) as sum_fte
+	FROM dbo.project_resource_mapping as prm
+	join dbo.project_resource_mapping_extended as prme on prm.map_id = prme.map_id
+	WHERE prm.is_deleted = '0'
+	AND prme.allocation_date <= IIF(prme.allocation_date <= :endDate, :endDate, prm.allocation_end_dt)
+    AND prme.allocation_date >= IIF(prme.allocation_date >= :startDate, :startDate, prm.allocation_start_dt)
+	group by prm.resource_id
+) prm ON rm.resource_id = prm.resource_id
+where rm.resource_id!=0 and (rm.date_of_join<=:endDate) and ((rm.last_working_date is null) or (rm.last_working_date>=:startDate))
+and rm.resource_id in :resourceIds
+group by rm.resource_id, rm.date_of_join, rm.last_working_date, prm.sum_fte, rm.first_name, rm.last_name, dm.department

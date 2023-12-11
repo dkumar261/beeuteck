@@ -1,0 +1,206 @@
+select
+
+    sum(case
+            when o8.field_value is not null
+            then
+                case when cast( ##month1## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                    and  cast( ##month1## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                    
+                then cast(o2.field_value as int) ELSE 0
+            end
+            Else
+                case when cast( ##month1## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                    
+                then cast(o2.field_value as int) ELSE 0
+            end
+        end
+    ) as ##m1##,
+
+    sum(case
+            when o8.field_value is not null
+            then
+                case when cast( ##month2## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                    and  cast( ##month2## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                    
+                then cast(o2.field_value as int) ELSE 0
+            end
+            Else
+                case when cast( ##month2## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                    
+                then cast(o2.field_value as int) ELSE 0
+            end
+        end
+    ) as ##m2##,
+
+    sum(case
+           when o8.field_value is not null
+           then
+               case when cast( ##month3## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                   and  cast( ##month3## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                   
+               then cast(o2.field_value as int) ELSE 0
+           end
+           Else
+               case when cast( ##month3## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                   
+               then cast(o2.field_value as int) ELSE 0
+           end
+       end
+    ) as ##m3##,
+
+    sum(case
+          when o8.field_value is not null
+          then
+              case when cast( ##month4## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  and  cast( ##month4## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+          Else
+              case when cast( ##month4## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+      end
+    ) as ##m4##,
+
+    sum(case
+          when o8.field_value is not null
+          then
+              case when cast( ##month5## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  and  cast( ##month5## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+          Else
+              case when cast( ##month5## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+      end
+    ) as ##m5##,
+
+    sum(case
+          when o8.field_value is not null
+          then
+              case when cast( ##month6## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  and  cast( ##month6## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+          Else
+              case when cast( ##month6## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+      end
+   ) as ##m6##,
+
+    sum(case
+          when o8.field_value is not null
+          then
+              case when cast( ##month7## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  and  cast( ##month7## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+          Else
+              case when cast( ##month7## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+      end
+   ) as ##m7##,
+
+    sum(case
+          when o8.field_value is not null
+          then
+              case when cast( ##month8## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  and  cast( ##month8## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+          Else
+              case when cast( ##month8## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+      end
+   ) as ##m8##,
+
+    sum(case
+          when o8.field_value is not null
+          then
+              case when cast( ##month9## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  and  cast( ##month9## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+          Else
+              case when cast( ##month9## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+      end
+   ) as ##m9##,
+
+    sum(case
+          when o8.field_value is not null
+          then
+              case when cast( ##month10## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  and  cast( ##month10## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+          Else
+              case when cast( ##month10## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+      end
+   ) as ##m10##,
+
+    sum(case
+          when o8.field_value is not null
+          then
+              case when cast( ##month11## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  and  cast( ##month11## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+          Else
+              case when cast( ##month11## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+      end
+   ) as ##m11##,
+
+    sum(case
+          when o8.field_value is not null
+          then
+              case when cast( ##month12## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  and  cast( ##month12## as date) <= (select TO_DATE(o8.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+          Else
+              case when cast( ##month12## as date) >= (select TO_DATE(o6.field_value, 'YYYY-MM-01'))
+                  
+              then cast(o2.field_value as int) ELSE 0
+          end
+      end
+   ) as ##m12##
+
+from
+	org_manager.direct_employee_det_forecast as o1
+join org_manager.finance_mgmt_field_value_forecast_direct_emp as o2 on o2.direct_employee_det_forecast_id = o1.direct_employee_det_forecast_id
+join org_manager.finance_mgmt_field_map as o3 on o3.field_id = o2.field_id
+join org_manager.finance_mgmt_field_value_forecast_direct_emp as o4 on o4.direct_employee_det_forecast_id = o1.direct_employee_det_forecast_id
+join org_manager.finance_mgmt_field_map as o5 on o5.field_id = o4.field_id
+join org_manager.finance_mgmt_field_value_forecast_direct_emp as o6 on o6.direct_employee_det_forecast_id = o1.direct_employee_det_forecast_id
+join org_manager.finance_mgmt_field_map as o7 on o7.field_id = o6.field_id
+join org_manager.finance_mgmt_field_value_forecast_direct_emp as o8  on o8.direct_employee_det_forecast_id = o1.direct_employee_det_forecast_id
+join org_manager.finance_mgmt_field_map as o9  on o9.field_id = o8.field_id
+where o1.financial_year= :financialYear and o3.fields='Salary' and o5.fields='Work Location'
+and o4.field_value= :workLocation and o7.fields='Start Date' and o9.fields='End Date' and o1.is_active = true

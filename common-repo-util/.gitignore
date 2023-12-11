@@ -1,0 +1,8 @@
+.idea
+target/
+.mvn
+logs
+
+mvnw
+mvnw.cmd
+/.run/GatewayApplication - UAT.run.xml

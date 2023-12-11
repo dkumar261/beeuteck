@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+	<property name="LOGSDIR" value="./user/demand/logs/" />
+	<appender name="SAVE-TO-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOGSDIR}/gateway/activity-log.log</file>
+	   	<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+	    	<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+	    </encoder>
+	    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+	        <fileNamePattern>${LOGSDIR}/gateway/archived/activity-log.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+	        <maxFileSize>10MB</maxFileSize>
+	        <maxHistory>10</maxHistory>
+	        <totalSizeCap>100MB</totalSizeCap>
+	    </rollingPolicy>
+	</appender>
+	
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n
+            </Pattern>
+        </layout>
+    </appender>
+		
+	<logger name="com.forecastera" additivity="false" level="info">
+	    <appender-ref ref="SAVE-TO-FILE" />
+	</logger>
+	
+	<root level="info">
+		<appender-ref ref="CONSOLE" />
+	</root>
+</configuration> 

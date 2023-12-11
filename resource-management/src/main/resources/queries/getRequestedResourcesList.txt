@@ -1,0 +1,15 @@
+select rr.request_id as requestedId, concat(rm.first_name, ' ', rm.last_name) as resourceName, rmr.role as, pmv.field_value,
+rr.allocation_start_date, rr.allocation_end_date, rr.requested_fte, rr.request_status,
+rr.created_by, rr.created_date, rr.modified_by, rr.modified_date
+from dbo.requested_resource as rr
+join dbo.resource_master as rm on rm.resource_id = rr.requested_resource_id
+join dbo.role_master as rmr on rmr.role_Id = rr.requested_role_id
+
+join dbo.project_master as pm on pm.project_id = rr.project_id
+join dbo.project_mgmt_field_value as pmv on pmv.project_id = pm.project_id
+join dbo.project_mgmt_field_map as pmf on pmf.field_id = pmv.field_id
+
+where pmf.fields = 'Project Name' and rm.resource_id!=0 and
+rm.date_of_join <= :endDate and (rm.last_working_date>= :startDate or rm.last_working_date is null)
+
+

@@ -1,0 +1,75 @@
+select
+rm.resource_id as resource_id,
+concat(rm.first_name, ' ', rm.last_name) as resource_name,
+rm.date_of_join as date_of_join,
+rm.last_working_date as last_working_date,
+--coalesce(prm.fte, 0.0) as requested_fte,
+prm.project_id, pm.project_name,
+--.project_start_date, pm.project_end_date,
+prm.allocation_start_dt, prm.allocation_end_dt,
+prme.id, prme.map_id, prme.allocation_date, prme.fte,
+prme.requested_fte
+
+from dbo.project_resource_mapping as prm
+join dbo.project_resource_mapping_extended as prme on prm.map_id = prme.map_id
+join dbo.resource_master as rm on prm.resource_id = rm.resource_id
+
+join(
+	select
+	pm.project_id, pfv.field_value as project_name,
+	(
+		case
+			when
+				pd.actual_start_date is not null and pd.actual_start_date!='null' and pd.actual_start_date!=''
+			then
+				case when pfv1.field_value < pd.actual_start_date then pfv1.field_value else pd.actual_start_date end
+            else
+				pfv1.field_value
+		end
+	) as project_start_date,
+	(
+		case
+			when
+				pd.actual_end_date is not null and pd.actual_end_date!='null' and pd.actual_end_date!=''
+			then
+				case when pfv2.field_value >pd.actual_end_date then pfv2.field_value else pd.actual_end_date end
+
+			else
+				pfv2.field_value
+		end
+	) as project_end_date
+	from dbo.project_master as pm
+
+	join dbo.project_mgmt_field_value as pfv on pfv.project_id = pm.project_id
+	join dbo.project_mgmt_field_map as pfm on pfv.field_id = pfm.field_id
+
+	join dbo.project_mgmt_field_value as pfv1 on pfv1.project_id = pm.project_id
+	join dbo.project_mgmt_field_map as pfm1 on pfv1.field_id = pfm1.field_id
+
+	join dbo.project_mgmt_field_value as pfv2 on pfv2.project_id = pm.project_id
+	join dbo.project_mgmt_field_map as pfm2 on pfv2.field_id = pfm2.field_id
+
+	left join (
+
+		select pm.project_id, pfv3.field_value as actual_start_date, pfv4.field_value as actual_end_date
+
+		from dbo.project_master as pm
+		left join dbo.project_mgmt_field_value as pfv3 on pfv3.project_id = pm.project_id
+		left join dbo.project_mgmt_field_map as pfm3 on pfv3.field_id = pfm3.field_id
+
+		left join dbo.project_mgmt_field_value as pfv4 on pfv4.project_id = pm.project_id
+		left join dbo.project_mgmt_field_map as pfm4 on pfv4.field_id = pfm4.field_id
+
+		where pfm3.fields = 'Actual Start Date' and pfm4.fields = 'Actual End Date'
+	) as pd on pm.project_id = pd.project_id
+
+	where pfm.fields = 'Project Name' and pfm1.fields = 'Start Date' and pfm2.fields = 'End Date'
+	) as pm on prm.project_id = pm.project_id
+
+where prm.is_deleted = '0' and prm.resource_id = :resourceId
+
+and prme.allocation_date>= prm.allocation_start_dt and prme.allocation_date<= prm.allocation_end_dt
+and pm.project_start_date < cast(:endDate as varchar)
+and pm.project_end_date > cast(:startDate as varchar)
+
+--order by prm.project_id, prme.allocation_date

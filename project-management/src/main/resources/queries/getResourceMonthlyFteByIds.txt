@@ -1,0 +1,10 @@
+select distinct (rm.resource_id) as resource_id, concat(rm.first_name, ' ',rm.last_name) as resource_name,
+COALESCE((SELECT (sum(datediff(day,(case when prm.allocation_end_dt < :endDate then prm.allocation_end_dt else :endDate end) ,
+(case when prm.allocation_start_dt > :startDate then prm.allocation_start_dt else :startDate end)) + 1 *fte) )
+	AS formula_result
+  FROM dbo.project_resource_mapping as prm
+  WHERE (prm.allocation_end_dt>= :startDate) and (prm.allocation_start_dt<= :endDate)
+	and prm.resource_id = rm.resource_id and prm.is_deleted = '0'), 0) as resource_avg_fte
+from dbo.resource_master as rm
+where rm.resource_id in :resourceIds;
+

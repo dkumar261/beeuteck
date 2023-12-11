@@ -1,0 +1,62 @@
+WITH ResourceHierarchy AS (
+    -- Anchor member (non-recursive)
+    SELECT
+        rm.resource_id,
+        CONCAT(rm.first_name, ' ', rm.last_name) AS name,
+        rfv.reporting_mgr,
+        1 AS depth,
+        CAST(rm.resource_id AS NVARCHAR(MAX)) AS path,
+        CAST(CONCAT(rm.first_name, ' ', rm.last_name) AS NVARCHAR(MAX)) AS path_by_name
+    FROM
+        dbo.resource_master AS rm
+    LEFT JOIN (
+        SELECT
+			rfv.resource_mgmt_field_value_id,
+            rfv.resource_id,
+            rfv.field_value AS reporting_mgr
+        FROM
+            dbo.resource_mgmt_field_value AS rfv
+        JOIN dbo.resource_mgmt_field_map AS rfm ON rfm.field_id = rfv.field_id
+        WHERE
+            rfm.fields = 'Reporting Manager'
+    ) AS rfv ON rfv.resource_id = rm.resource_id
+    WHERE
+        (rfv.resource_mgmt_field_value_id IS NULL OR rfv.reporting_mgr IS NULL OR rfv.reporting_mgr = '')
+        -- AND rm.resource_id != 0
+
+    UNION ALL
+
+    -- Recursive member
+    SELECT
+        rm1.resource_id,
+        CONCAT(rm1.first_name, ' ', rm1.last_name),
+        rfv1.reporting_mgr,
+        rh.depth + 1,
+        rh.path + '->' + CAST(rm1.resource_id AS NVARCHAR(MAX)),
+        rh.path_by_name + '->' + CAST(CONCAT(rm1.first_name, ' ', rm1.last_name) AS NVARCHAR(MAX))
+    FROM
+        dbo.resource_master rm1
+    JOIN (
+        SELECT
+            rfv.resource_id,
+            rfv.field_value AS reporting_mgr
+        FROM
+            dbo.resource_mgmt_field_value AS rfv
+        JOIN dbo.resource_mgmt_field_map AS rfm ON rfm.field_id = rfv.field_id
+        WHERE
+            rfm.fields = 'Reporting Manager'
+    ) AS rfv1 ON rfv1.resource_id = rm1.resource_id
+    JOIN ResourceHierarchy rh ON rfv1.reporting_mgr = CAST(rh.resource_id AS NVARCHAR(MAX))
+    WHERE
+        rh.depth < 20
+)
+SELECT
+    resource_id,
+    depth AS depth_order,
+    name AS resource_name,
+    path AS ancestral_path,
+    path_by_name AS ancestral_path_by_name
+FROM
+    ResourceHierarchy
+ORDER BY
+    path;

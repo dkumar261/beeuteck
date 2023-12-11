@@ -1,0 +1,11 @@
+select dm.department_id as department_id, count(rfv.resource_id) as resource_count, dm.department as department_name
+from dbo.resource_master as rm
+
+inner join dbo.resource_mgmt_field_value as rfv on rm.resource_id = rfv.resource_id
+inner join dbo.resource_mgmt_field_map as rfm on rfv.field_id = rfm.field_id
+inner join dbo.department_master as dm on cast(dm.department_id as varchar) = rfv.field_value
+
+where rfm.fields = 'Department' and rfm.setting_type!=3 and rm.resource_id!=0 and
+rm.date_of_join <= :endDate and (rm.last_working_date>= :startDate or rm.last_working_date is null)
+group by dm.department_id, dm.department
+order by resource_count desc, department_name;

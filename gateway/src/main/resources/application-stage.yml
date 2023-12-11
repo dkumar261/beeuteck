@@ -1,0 +1,89 @@
+server:
+  port: 8001
+  max-http-header-size: 65536
+  forward-headers-strategy: framework
+  ssl:
+    enabled: true
+    key-store: "classpath:cacerts.jks"
+    key-store-password: changeit
+    key-store-type: jks
+    key-alias: nextq
+    trust-store: "classpath:cacerts.jks"
+    trust-store-password: changeit
+
+gateway:
+  httpProtocol: 'https://'
+  host: 'demanddemo.nextq.ai'
+  url: '${gateway.httpProtocol}${gateway.host}:'
+
+spring:
+  application:
+    name: GATEWAY-STAGE
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: USER-SETTING-MANAGEMENT-STAGE
+          uri: lb://USER-SETTING-MANAGEMENT-STAGE
+          predicates:
+            - Path=/user-setting/**
+          filters:
+          - PreGatewayFilter
+          
+        - id: RESOURCE-MANAGEMENT-STAGE
+          uri: lb://RESOURCE-MANAGEMENT-STAGE
+          predicates:
+            - Path=/resource/**
+          filters:
+          - PreGatewayFilter
+          
+        - id: PROJECT-MANAGEMENT-STAGE
+          uri: lb://PROJECT-MANAGEMENT-STAGE
+          predicates:
+            - Path=/project/**
+          filters:
+          - PreGatewayFilter 	
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: '${gateway.url}8761/eureka/'
+  instance:
+    hostname: ${gateway.host}
+    prefer-ip-address: true
+    non-secure-port-enabled: false
+    secure-port-enabled: true
+    secure-port: ${server.port}
+    statusPageUrl: '${gateway.httpProtocol}${eureka.instance.hostname}:${server.port}/info'
+    healthCheckUrl: '${gateway.httpProtocol}${eureka.instance.hostname}:${server.port}/health'
+    homePageUrl: '${gateway.httpProtocol}${eureka.instance.hostname}:${server.port}/'
+
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+    doc-expansion: none
+
+logging:
+  level:
+    root: INFO
+  file:
+    name: logs/gateway/gateway.log
+    total-size-cap: 30GB
+    max-size: 5MB
+  pattern:
+    console: "%d %-5level %logger : %msg%n"
+    rolling-file-name: logs/gateway-%d{yyyy-MM-dd}.%i.log

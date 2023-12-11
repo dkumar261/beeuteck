@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: EUREKA-SERVER-
+
+eureka-config:
+  httpProtocol: 'http://'
+  host: 'localhost'
+
+server:
+  port: 8761
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: '${eureka-config.httpProtocol}${eureka-config.host}:8761/eureka/'
+  instance:
+    hostname: ${eureka-config.host}
+    prefer-ip-address: true
+
+logging:
+  level:
+    root: INFO
+  file:
+    name: logs/eureka-server/eureka-server.log
+    total-size-cap: 30GB
+    max-size: 5MB
+  pattern:
+    console: "%d %-5level %logger : %msg%n"
+    rolling-file-name: logs/eureka-server-%d{yyyy-MM-dd}.%i.log

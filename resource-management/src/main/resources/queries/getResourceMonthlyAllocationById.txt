@@ -1,0 +1,18 @@
+select rm.resource_id, concat(rm.first_name, ' ',rm.last_name) as resource_name,
+ case when prm.allocation_start_dt > cast(:endDate as date) then prm.allocation_start_dt else cast( :endDate as date) end as start_date,
+ case when prm.allocation_end_dt < cast(:startDate as date) then prm.allocation_end_dt else cast(:startDate as date) end  as end_date,
+prm.fte,
+
+--prm.project_id ,prm.is_deleted,
+--(least(prm.allocation_end_dt, cast(:endDate as date)) - greatest(prm.allocation_start_dt, cast(:startDate as date)) + 1 ) as date_diff,
+
+(datediff(day,(case when prm.allocation_end_dt < :endDate then prm.allocation_end_dt else :endDate end) , (case when prm.allocation_start_dt > :startDate then prm.allocation_start_dt else :startDate end)) + 1 *prm.fte)as fte_worked
+
+from dbo.resource_master as rm
+join dbo.project_resource_mapping as prm on rm.resource_id = prm.resource_id
+
+where prm.allocation_start_dt<= :endDate
+and prm.allocation_end_dt>= :startDate
+and prm.is_deleted = '0'
+and prm.map_id!= :mapId
+and rm.resource_id = :resourceId

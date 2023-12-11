@@ -1,0 +1,14 @@
+select rr.role_id as role_id, count(rfv.resource_id) as resource_count, rr.role as role_name
+from dbo.resource_master as rm
+
+inner join dbo.resource_mgmt_field_value as rfv on rm.resource_id = rfv.resource_id
+inner join dbo.resource_mgmt_field_map as rfm on rfv.field_id = rfm.field_id
+inner join dbo.role_master as rr on cast(rr.role_id as varchar) in (select value from string_split(rfv.field_value,','))
+
+inner join dbo.resource_mgmt_field_value as rfv1 on rm.resource_id = rfv1.resource_id
+inner join dbo.resource_mgmt_field_map as rfm1 on rfv1.field_id = rfm1.field_id
+
+where rfm.fields = 'Role' and rfm.setting_type!=3 and rm.resource_id!=0 and
+rm.date_of_join <= :endDate and (rm.last_working_date>= :startDate or rm.last_working_date is null)
+and rfm1.fields = 'Department' and rfv1.field_value = cast(:departmentId as varchar)
+group by rr.role_id, rr.role;
