@@ -1,0 +1,59 @@
+#update your local dc-main branch
+git checkout dc-main 
+git pull origin dc-main
+
+#rebase your feature branch or bugfix branch. i.e., you are working on a brach called feature/QMA-4567
+git checkout feature/QMA-4567
+git rebase dc-main
+
+#if you prompt with conflict, fix all the files that has conflicts. add each of them one by one.
+git add /file/location/filename.ext
+git add /file/location2/filename2.ext
+
+git rebase --continue
+# remember you may have prompted multiple times for conflict. it depends on how may commits you made befor on the branch feature/QMA-4567
+
+#after the end of the rebase push the branch to remote
+git push origin -f feature/QMA-4567 #here `-f` is important
+
+
+
+git checkout feature/QMA-1778_ReAge_Remove_NewMessage
+git push origin -f feature/QMA-4567 #here `-f` is important
+
+git push origin -f feature/QMA-1778_ReAge_Remove_NewMessage
+
+
+mongodump --host mongodb.test.qwyn.deltacapita.net --port 27015 --db qma -u=qwynread9 -p=YvAWIi2UoJ13DCds3sIu78  --authenticationDatabase admin --out temp
+
+mongorestore --host localhost:27017 --username admin --password password --authenticationDatabase admin --db qma temp/qma
+
+mongorestore --host=localhost:27017 --username=admin --password=password --authenticationDatabase=admin --gzip --archive=20250410-080001-UTC.archive.gz 
+
+30
+36
+18
+-----
+84
+23
+----
+61
+----
+
+
+EMIs
+Ac - 7  > dec 24
+Mob - 8.5 > march 25
+Matress-  1.2 > apr 25
+CITI-Emi - 8.5  > 7  may 2025
+Car - 12k Aug
+Gold Loan - 2.5k
+Liq - 19 > 12
+HDFC - 35 
+bj -32
+
+------
+2
+
+
+git clone -b indirect-labour-api https://isolankinq@github.com/forecastera/Demand-Microservices.git
